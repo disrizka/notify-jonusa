@@ -1,135 +1,146 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+<div class="flex h-screen bg-gray-100" 
+     x-data="{ 
+        openKehadiran: {{ (request()->routeIs('admin.presence.*') || request()->routeIs('admin.leaves.*')) ? 'true' : 'false' }},
+        openMobile: false 
+     }">
+    
+    <div class="w-64 bg-white shadow-sm border-r border-gray-200 hidden md:block">
+        <div class="p-6 flex flex-col h-full">
+            <div class="shrink-0 flex items-center mb-10 pl-2">
+                <a href="{{ route('dashboard') }}">
+                    <x-application-logo class="block h-10 w-auto fill-current text-gray-800" />
+                </a>
+            </div>
 
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+            <nav class="flex-1 space-y-1 overflow-y-auto">
+                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" 
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                    <i class="fas fa-home w-5 mr-3"></i> {{ __('Dashboard') }}
+                </x-nav-link>
+
+                @if(Auth::user()->role === 'kepala')
+                    <x-nav-link :href="route('divisions.index')" :active="request()->routeIs('divisions.*')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-layer-group w-5 mr-3"></i> {{ __('Pengaturan Divisi') }}
                     </x-nav-link>
 
-                    @if(Auth::user()->role === 'kepala')
-                        <x-nav-link :href="route('divisions.index')" :active="request()->routeIs('divisions.*')">
-                            {{ __('Pengaturan Divisi') }}
-                        </x-nav-link>
+                    <x-nav-link :href="route('users-management.index')" :active="request()->routeIs('users-management.*')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-users w-5 mr-3"></i> {{ __('Manajemen Karyawan') }}
+                    </x-nav-link>
 
-                        <x-nav-link :href="route('users-management.index')" :active="request()->routeIs('users-management.*')">
-                            {{ __('Manajemen Karyawan') }}
-                        </x-nav-link>
+                    {{-- Dropdown Kehadiran --}}
+                    <div class="space-y-1">
+                        <button @click="openKehadiran = !openKehadiran" 
+                            class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none rounded-md group {{ (request()->routeIs('admin.presence.*') || request()->routeIs('admin.leaves.*')) ? 'text-pink-600 bg-pink-50' : 'text-gray-600 hover:bg-gray-50' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-check w-5 mr-3 {{ (request()->routeIs('admin.presence.*') || request()->routeIs('admin.leaves.*')) ? 'text-pink-600' : 'text-gray-400' }}"></i>
+                                <span>{{ __('Kehadiran') }}</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': openKehadiran}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
 
-                        <x-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')">
-                            {{ __('Buat Tugas Baru') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('jobs.history')" :active="request()->routeIs('jobs.history')">
-                            {{ __('Riwayat Tugas') }}
-                        </x-nav-link>
-                    @endif
-
-                    @if(Auth::user()->role === 'karyawan')
-                        <x-nav-link href="#">
-                            {{ __('Ceklis Harian') }}
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('technician.dashboard')" :active="request()->routeIs('technician.dashboard')">
-                            {{ __('Tracker Kerja') }}
-                        </x-nav-link>
-
-                        <x-nav-link :href="route('jobs.history')" :active="request()->routeIs('jobs.history')">
-                            {{ __('Riwayat Tugas') }}
-                        </x-nav-link>
-
-                        @if(Auth::user()->division && Auth::user()->division->name == 'Customer Service')
-                            <x-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')">
-                                {{ __('Buat Tugas Baru') }}
+                        <div x-show="openKehadiran" x-cloak x-transition class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-4">
+                            {{-- Perbaikan: Ubah .approval menjadi .index --}}
+                            <x-nav-link :href="route('admin.presence.index')" :active="request()->routeIs('admin.presence.index')" 
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                1. Approval Absensi
                             </x-nav-link>
-                        @endif
+
+                            <x-nav-link :href="route('admin.leaves.index')" :active="request()->routeIs('admin.leaves.index')" 
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                2. Izin & Cuti
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('admin.presence.schedule')" :active="request()->routeIs('admin.presence.schedule')" 
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                3. Jadwal Kerja
+                            </x-nav-link>
+
+                            <x-nav-link :href="route('admin.presence.history')" :active="request()->routeIs('admin.presence.history')" 
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                4. Riwayat Presensi
+                            </x-nav-link>
+                            
+                            <x-nav-link :href="route('admin.presence.settings')" :active="request()->routeIs('admin.presence.settings')"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                5. Settings Absensi
+                            </x-nav-link>
+                        </div>
+                    </div>
+
+                    <x-nav-link :href="route('admin.createTemplate')" :active="request()->routeIs('admin.createTemplate')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-file-alt w-5 mr-3"></i> {{ __('Atur Template Ceklis') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Buat Tugas Baru') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('jobs.history')" :active="request()->routeIs('jobs.history')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-history w-5 mr-3"></i> {{ __('Riwayat Tugas') }}
+                    </x-nav-link>
+                @endif
+
+                @if(Auth::user()->role === 'karyawan')
+                    <x-nav-link :href="route('checklists.index')" :active="request()->routeIs('checklists.index')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
+                        <i class="fas fa-check-double w-5 mr-3"></i> {{ __('Ceklis Harian') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('technician.dashboard')" :active="request()->routeIs('technician.dashboard')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
+                        <i class="fas fa-stopwatch w-5 mr-3"></i> {{ __('Tracker Kerja') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('jobs.history')" :active="request()->routeIs('jobs.history')" 
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
+                        <i class="fas fa-history w-5 mr-3"></i> {{ __('Riwayat Tugas') }}
+                    </x-nav-link>
+
+                    @if(Auth::user()->division && Auth::user()->division->name == 'Customer Service')
+                        <x-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')" 
+                            class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
+                            <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Buat Tugas Baru') }}
+                        </x-nav-link>
                     @endif
+                @endif
+            </nav>
+
+            <div class="border-t border-gray-200 pt-4 mt-6">
+                <div class="flex items-center px-3 mb-4">
+                    <div class="ml-1">
+                        <p class="text-xs font-bold text-indigo-600 uppercase tracking-tighter">{{ Auth::user()->role }}</p>
+                        <p class="text-sm font-medium text-gray-700 truncate w-32">{{ Auth::user()->name }}</p>
+                    </div>
+                </div>
+                <div class="space-y-1 px-2">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="flex items-center w-full px-2 py-2 text-xs text-red-600 hover:bg-red-50 rounded-md transition duration-150">
+                            <i class="fas fa-sign-out-alt mr-2"></i> {{ __('Log Out') }}
+                        </button>
+                    </form>
                 </div>
             </div>
-
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div class="flex items-center">
-                                <span class="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded uppercase">{{ Auth::user()->role }}</span>
-                                <div>{{ Auth::user()->name }}</div>
-                            </div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
         </div>
     </div>
 
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header class="md:hidden bg-white border-b p-4 flex justify-between items-center text-gray-800">
+            <x-application-logo class="h-8 w-auto" />
+            <button @click="openMobile = !openMobile" class="focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </header>
 
-            @if(Auth::user()->role === 'kepala')
-                <x-responsive-nav-link :href="route('divisions.index')" :active="request()->routeIs('divisions.*')">
-                    {{ __('Pengaturan Divisi') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('users-management.index')" :active="request()->routeIs('users-management.*')">
-                    {{ __('Manajemen Karyawan') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')">
-                    {{ __('Buat Tugas Baru') }}
-                </x-responsive-nav-link>
-            @endif
-
-            @if(Auth::user()->role === 'karyawan')
-                <x-responsive-nav-link href="#">
-                    {{ __('Ceklis Harian') }}
-                </x-responsive-nav-link>
-
-                <x-responsive-nav-link :href="route('technician.dashboard')" :active="request()->routeIs('technician.dashboard')">
-                    {{ __('Tracker Kerja') }}
-                </x-responsive-nav-link>
-
-                @if(Auth::user()->division && Auth::user()->division->name == 'Customer Service')
-                    <x-responsive-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')">
-                        {{ __('Buat Tugas Baru') }}
-                    </x-responsive-nav-link>
-                @endif
-            @endif
-        </div>
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            {{ $slot }}
+        </main>
     </div>
-</nav>
+</div>
