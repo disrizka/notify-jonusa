@@ -23,7 +23,6 @@ class PresenceController extends Controller
         $user = $request->user();
         $today = now()->format('Y-m-d');
         $now = now(); // Jam server saat ini
-
         // --- LOGIKA VALIDASI WAKTU & TOLERANSI ---
         $setting = OfficeSetting::first();
         if ($setting) {
@@ -105,4 +104,47 @@ class PresenceController extends Controller
 
         return response()->json(['success' => false, 'message' => 'Gagal menyimpan ke database.'], 500);
     }
+
+    // app/Http/Controllers/Api/PresenceController.php
+
+public function storePermission(Request $request)
+{
+    $user = $request->user();
+    // Gunakan 'date' sebagai field utama sesuai kiriman Flutter terbaru
+    $targetDate = $request->date; 
+
+    // 1. Logika Kunci Harian: Jika sudah absen 'masuk', tidak bisa izin di hari yang sama
+    $alreadyPresent = Presence::where('user_id', $user->id)
+        ->whereDate('date', $targetDate)
+        ->where('category', 'masuk')
+        ->exists();
+
+    if ($alreadyPresent) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal! Anda sudah memiliki catatan absen masuk hari ini.'
+        ], 422);
+    }
+
+    // 2. Simpan Lampiran
+    $path = null;
+    if ($request->hasFile('attachment')) {
+        $path = $request->file('attachment')->store('permissions', 'public');
+    }
+
+    // 3. Simpan ke tabel presences (Agar sinkron dengan Dashboard Web)
+    $presence = Presence::create([
+        'user_id'     => $user->id,
+        'category'    => strtolower($request->category), // 'sakit', 'cuti', 'izin'
+        'date'        => $targetDate,
+        'notes'       => $request->notes, // Penting: field 'notes' agar muncul di kolom Alasan di Web
+        'attachment'  => $path,
+        'is_approved' => 'pending'
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Laporan berhasil dikirim'
+    ], 201);
+}
 }
