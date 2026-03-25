@@ -21,12 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/presence/permissions', [PresenceController::class, 'storePermission']);
-    // KIRIM ABSENSI (Dari Flutter)
-    // Gunakan PresenceController (bukan AttendanceController)
     Route::post('/presence/check-in', [PresenceController::class, 'storeCheckIn']);
     Route::get('/attendance/config', [PresenceApprovalController::class, 'getConfig']);
     Route::post('/presence/checkout', [PresenceController::class, 'storeCheckOut']);
 
     
+    Route::get('/chats', [\App\Http\Controllers\Api\ChatController::class, 'index']);
+    Route::post('/chats', [\App\Http\Controllers\Api\ChatController::class, 'store']);
     
 });
