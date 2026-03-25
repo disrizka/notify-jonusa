@@ -1,7 +1,7 @@
 <div class="flex h-screen bg-gray-100" 
      x-data="{ 
-        {{-- Logika agar dropdown otomatis terbuka jika salah satu route di bawah aktif --}}
         openKehadiran: {{ (request()->routeIs('admin.presence.*') || request()->routeIs('admin.perizinan.*') || request()->routeIs('admin.leaves.*')) ? 'true' : 'false' }},
+        openRekrutmen: false,
         openMobile: false 
      }">
     
@@ -46,34 +46,65 @@
                         </button>
 
                         <div x-show="openKehadiran" x-cloak x-transition class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-4">
-                            {{-- 1. Approval Absensi --}}
                             <x-nav-link :href="route('admin.presence.index')" :active="request()->routeIs('admin.presence.index')" 
                                 class="block py-2 text-xs border-none w-full justify-start">
                                 1. Approval Absensi
                             </x-nav-link>
 
-                            {{-- 2. Izin & Cuti --}}
                             <x-nav-link :href="route('admin.perizinan')" :active="request()->routeIs('admin.perizinan')" 
                                 class="block py-2 text-xs border-none w-full justify-start">
                                 2. Izin & Cuti
                             </x-nav-link>
 
-                            {{-- 3. Jadwal Kerja --}}
                             <x-nav-link :href="route('admin.presence.schedule')" :active="request()->routeIs('admin.presence.schedule')" 
                                 class="block py-2 text-xs border-none w-full justify-start">
                                 3. Jadwal Kerja
                             </x-nav-link>
 
-                            {{-- 4. Riwayat Presensi --}}
                             <x-nav-link :href="route('admin.presence.history')" :active="request()->routeIs('admin.presence.history')" 
                                 class="block py-2 text-xs border-none w-full justify-start">
                                 4. Riwayat Presensi
                             </x-nav-link>
                             
-                            {{-- 5. Settings Absensi --}}
                             <x-nav-link :href="route('admin.presence.settings')" :active="request()->routeIs('admin.presence.settings')"
                                 class="block py-2 text-xs border-none w-full justify-start">
                                 5. Settings Absensi
+                            </x-nav-link>
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Rekrutmen --}}
+                    <div class="space-y-1">
+                        <button @click="openRekrutmen = !openRekrutmen" 
+                            class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none rounded-md group text-gray-600 hover:bg-gray-50">
+                            <div class="flex items-center">
+                                <i class="fas fa-user-tie w-5 mr-3 text-gray-400"></i>
+                                <span>{{ __('Rekrutmen') }}</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': openRekrutmen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <div x-show="openRekrutmen" x-cloak x-transition class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-4">
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                1. Profil
+                            </x-nav-link>
+
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                2. Manajemen Rekrutmen
+                            </x-nav-link>
+
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                3. Lowongan Pekerjaan
+                            </x-nav-link>
+
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                4. Kandidat
                             </x-nav-link>
                         </div>
                     </div>
@@ -93,7 +124,65 @@
                         class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
                         <i class="fas fa-history w-5 mr-3"></i> {{ __('Riwayat Tugas') }}
                     </x-nav-link>
-                    
+                     <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Approval') }}
+                    </x-nav-link>
+                    <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Timeline') }}
+                    </x-nav-link>
+                    <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Clien') }}
+                    </x-nav-link>
+
+                       {{-- Dropdown Rekrutmen --}}
+                    <div class="space-y-1">
+                        <button @click="openRekrutmen = !openRekrutmen" 
+                            class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none rounded-md group text-gray-600 hover:bg-gray-50">
+                            <div class="flex items-center">
+                                <i class="fas fa-user-tie w-5 mr-3 text-gray-400"></i>
+                                <span>{{ __('KPI') }}</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': openRekrutmen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <div x-show="openRekrutmen" x-cloak x-transition class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-4">
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                1. Formulir
+                            </x-nav-link>
+
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                2. Jadwal
+                            </x-nav-link>
+
+                            <x-nav-link href="#" :active="false"
+                                class="block py-2 text-xs border-none w-full justify-start">
+                                3. Evaluasi
+                            </x-nav-link>
+                        </div>
+                    </div>
+                    <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Akuntansi') }}
+                    </x-nav-link>
+                    <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Tugas') }}
+                    </x-nav-link>
+                    <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Pengaturan') }}
+                        <x-nav-link
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
+                        <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('FAQ') }}
+                    </x-nav-link>
+                    </x-nav-link>
                 @endif
 
                 @if(Auth::user()->role === 'karyawan')
@@ -117,6 +206,7 @@
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
                             <i class="fas fa-plus-circle w-5 mr-3"></i> {{ __('Buat Tugas Baru') }}
                         </x-nav-link>
+                        
                     @endif
                 @endif
             </nav>
