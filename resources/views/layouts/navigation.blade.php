@@ -93,6 +93,7 @@
                         class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start transition-colors duration-200">
                         <i class="fas fa-history w-5 mr-3"></i> {{ __('Riwayat Tugas') }}
                     </x-nav-link>
+                    
                 @endif
 
                 @if(Auth::user()->role === 'karyawan')
@@ -110,7 +111,7 @@
                         class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">
                         <i class="fas fa-history w-5 mr-3"></i> {{ __('Riwayat Tugas') }}
                     </x-nav-link>
-
+                    
                     @if(Auth::user()->division && Auth::user()->division->name == 'Customer Service')
                         <x-nav-link :href="route('jobs.create')" :active="request()->routeIs('jobs.create')" 
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-md border-none w-full justify-start">

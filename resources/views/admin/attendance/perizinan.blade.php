@@ -21,8 +21,8 @@
                     
                     {{-- Judul & Informasi --}}
                     <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-800">Daftar Pengajuan</h3>
-                        <p class="text-sm text-gray-500">Menampilkan permohonan Cuti, Izin, dan Sakit karyawan yang memerlukan persetujuan.</p>
+                        <h3 class="text-lg font-bold text-gray-800">Daftar Pengajuan (Tabel Leaves)</h3>
+                        <p class="text-sm text-gray-500">Menampilkan permohonan Cuti, Izin, dan Sakit karyawan dari tabel leaves.</p>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -54,7 +54,7 @@
                                             </div>
                                         </td>
 
-                                        {{-- Tipe Badge --}}
+                                        {{-- Tipe Badge (Menggunakan kolom 'type' dari tabel leaves) --}}
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
                                                 $colors = [
@@ -62,31 +62,34 @@
                                                     'sakit' => 'bg-rose-100 text-rose-700',
                                                     'izin' => 'bg-blue-100 text-blue-700',
                                                 ];
-                                                $color = $colors[$p->category] ?? 'bg-gray-100 text-gray-700';
+                                                $color = $colors[strtolower($p->type)] ?? 'bg-gray-100 text-gray-700';
                                             @endphp
                                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase {{ $color }}">
-                                                {{ $p->category }}
+                                                {{ $p->type }}
                                             </span>
                                         </td>
 
-                                        {{-- Tanggal --}}
+                                        {{-- Tanggal (Start Date & End Date) --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-medium">
-                                            {{ \Carbon\Carbon::parse($p->date)->format('d M Y') }}
+                                            {{ \Carbon\Carbon::parse($p->start_date)->format('d M Y') }}
+                                            @if($p->end_date && $p->end_date != $p->start_date)
+                                                <br><span class="text-[10px] text-gray-400">s/d {{ \Carbon\Carbon::parse($p->end_date)->format('d M Y') }}</span>
+                                            @endif
                                         </td>
 
-                                        {{-- Alasan --}}
+                                        {{-- Alasan (Menggunakan kolom 'reason' dari tabel leaves) --}}
                                         <td class="px-6 py-4 text-sm text-gray-600">
-                                            <div class="max-w-xs truncate" title="{{ $p->notes }}">
-                                                {{ $p->notes ?? '-' }}
+                                            <div class="max-w-xs truncate" title="{{ $p->reason }}">
+                                                {{ $p->reason ?? '-' }}
                                             </div>
                                         </td>
 
-                                        {{-- Bukti/Lampiran --}}
+                                        {{-- Bukti/Lampiran (Menggunakan kolom 'attachment_file') --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-xs">
-                                            @if($p->attachment)
-                                                <a href="{{ asset('storage/'.$p->attachment) }}" target="_blank" class="text-indigo-600 hover:text-indigo-900 font-bold flex items-center gap-1">
+                                            @if($p->attachment_file)
+                                                <a href="{{ asset('storage/'.$p->attachment_file) }}" target="_blank" class="text-indigo-600 hover:text-indigo-900 font-bold flex items-center gap-1">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                                                    Lihat Dokumen
+                                                    Lihat Bukti
                                                 </a>
                                             @else
                                                 <span class="text-gray-400 italic">Tidak ada</span>
@@ -96,18 +99,19 @@
                                         {{-- Status --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-xs">
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 font-black uppercase tracking-wider 
-                                                {{ $p->is_approved == 'approved' ? 'bg-emerald-100 text-emerald-700' : ($p->is_approved == 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
-                                                {{ $p->is_approved }}
+                                                {{ $p->status == 'approved' ? 'bg-emerald-100 text-emerald-700' : ($p->status == 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
+                                                {{ $p->status }}
                                             </span>
                                         </td>
 
                                         {{-- Aksi --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                            @if($p->is_approved == 'pending')
+                                            @if($p->status == 'pending')
                                                 <div class="flex justify-center gap-2">
                                                     {{-- Tombol Terima --}}
                                                     <form action="{{ route('admin.presence.approve', $p->id) }}" method="POST" onsubmit="return confirm('Setujui pengajuan ini?')">
-                                                        @csrf @method('PATCH')
+                                                        @csrf 
+                                                        @method('PATCH')
                                                         <button type="submit" class="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-sm transition">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                                         </button>
@@ -115,24 +119,22 @@
 
                                                     {{-- Tombol Tolak --}}
                                                     <form action="{{ route('admin.presence.reject', $p->id) }}" method="POST" onsubmit="return confirm('Tolak pengajuan ini?')">
-                                                        @csrf @method('PATCH')
+                                                        @csrf 
+                                                        @method('PATCH')
                                                         <button type="submit" class="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full shadow-sm transition">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                         </button>
                                                     </form>
                                                 </div>
                                             @else
-                                                <span class="text-gray-300 italic text-[10px]">Sudah diproses</span>
+                                                <span class="text-gray-300 italic text-[10px]">Selesai</span>
                                             @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-6 py-20 text-center">
-                                            <div class="flex flex-col items-center justify-center text-gray-400">
-                                                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                                <p class="font-bold">Tidak ada pengajuan perizinan masuk.</p>
-                                            </div>
+                                        <td colspan="7" class="px-6 py-20 text-center text-gray-400 font-bold">
+                                            Tabel leaves kosong. Tidak ada pengajuan izin masuk.
                                         </td>
                                     </tr>
                                 @endforelse

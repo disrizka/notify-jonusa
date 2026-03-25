@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
         // Aksi Setuju/Tolak (Universal untuk Absen & Perizinan)
         // Gunakan PATCH agar sesuai dengan form di perizinan.blade.php
+        // routes/web.php
         Route::patch('/admin/attendance/approve/{id}', [PresenceApprovalController::class, 'leaveApprove'])->name('admin.presence.approve');
         Route::patch('/admin/attendance/reject/{id}', [PresenceApprovalController::class, 'leaveReject'])->name('admin.presence.reject');
         

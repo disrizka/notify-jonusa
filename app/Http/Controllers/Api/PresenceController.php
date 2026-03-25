@@ -4,79 +4,59 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Presence;
-use App\Models\OfficeSetting; // Tambahkan ini
+use App\Models\Leave;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 class PresenceController extends Controller
 {
+    /**
+     * 1. Check-In (Masuk ke Tabel Presences)
+     */
     public function storeCheckIn(Request $request)
     {
-        $request->validate([
-            'latitude'  => 'required',
-            'longitude' => 'required',
-            'photo'     => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'notes'     => 'nullable|string',
-        ]);
-
         $user = $request->user();
         $today = now()->format('Y-m-d');
-        $now = now(); // Jam server saat ini
-        // --- LOGIKA VALIDASI WAKTU & TOLERANSI ---
-        $setting = OfficeSetting::first();
-        if ($setting) {
-            // Gabungkan tanggal hari ini dengan jam batas dari setting
-            $checkInLimit = Carbon::createFromFormat('Y-m-d H:i:s', $today . ' ' . $setting->check_in_time);
-            // Tambahkan toleransi (menit)
-            $maxTime = $checkInLimit->addMinutes($setting->late_tolerance);
 
-            if ($now->greaterThan($maxTime)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal! Sudah melewati batas waktu masuk (' . $maxTime->format('H:i') . ').'
-                ], 422);
-            }
-        }
-
-        // Cek double check-in
+        // Cek apakah hari ini sudah absen masuk
         $alreadyCheckedIn = Presence::where('user_id', $user->id)
-                                    ->where('date', $today)
-                                    ->exists();
+            ->where('date', $today)
+            ->where('category', 'masuk')
+            ->exists();
 
         if ($alreadyCheckedIn) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan Check-in hari ini.'
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Anda sudah absen masuk hari ini.'], 422);
         }
 
-        // Simpan foto
-        $path = $request->file('photo')->store('presence_photos', 'public');
+        $path = null;
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('presence_photos', 'public');
+        }
 
         $presence = Presence::create([
             'user_id'     => $user->id,
             'date'        => $today,
-            'check_in'    => $now->format('H:i:s'),
+            'category'    => 'masuk', // Kategori wajib agar terpisah dari izin
+            'check_in'    => now()->format('H:i:s'),
+            'photo_in'    => $path,
             'lat_in'      => $request->latitude,
             'lng_in'      => $request->longitude,
-            'photo_in'    => $path,
             'notes'       => $request->notes ?? 'Absen Masuk Mobile',
-            'is_approved' => 'pending', 
+            'is_approved' => 'pending'
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Check-in berhasil dikirim.',
-            'data'    => $presence
-        ], 201);
+        return response()->json(['success' => true, 'message' => 'Check-in berhasil!', 'data' => $presence], 201);
     }
 
+    /**
+     * 2. Check-Out (Update Tabel Presences)
+     */
     public function storeCheckOut(Request $request)
     {
         $user = $request->user();
         $presence = Presence::where('user_id', $user->id)
-                            ->where('date', now()->format('Y-m-d')) // Pastikan checkout di hari yang sama
+                            ->where('date', now()->format('Y-m-d'))
+                            ->where('category', 'masuk')
                             ->latest('id')
                             ->first();
 
@@ -95,56 +75,49 @@ class PresenceController extends Controller
         $presence->notes_out = $request->notes ?? 'Absen Pulang';
 
         if ($presence->save()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Check-out berhasil tersimpan!',
-                'data'    => $presence 
-            ], 200);
+            return response()->json(['success' => true, 'message' => 'Check-out berhasil!', 'data' => $presence], 200);
         }
 
         return response()->json(['success' => false, 'message' => 'Gagal menyimpan ke database.'], 500);
     }
 
-    // app/Http/Controllers/Api/PresenceController.php
+    /**
+     * 3. Izin/Sakit/Cuti (Masuk ke Tabel Leaves)
+     */
+    public function storePermission(Request $request)
+    {
+        $user = $request->user();
+        $startDate = $request->start_date;
 
-public function storePermission(Request $request)
-{
-    $user = $request->user();
-    // Gunakan 'date' sebagai field utama sesuai kiriman Flutter terbaru
-    $targetDate = $request->date; 
+        // Cek apakah sudah absen masuk di tabel presences pada tanggal yang diajukan
+        $alreadyPresent = Presence::where('user_id', $user->id)
+            ->whereDate('date', $startDate)
+            ->where('category', 'masuk')
+            ->exists();
 
-    // 1. Logika Kunci Harian: Jika sudah absen 'masuk', tidak bisa izin di hari yang sama
-    $alreadyPresent = Presence::where('user_id', $user->id)
-        ->whereDate('date', $targetDate)
-        ->where('category', 'masuk')
-        ->exists();
+        if ($alreadyPresent) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal! Anda sudah memiliki catatan absen masuk pada tanggal ' . $startDate
+            ], 422);
+        }
 
-    if ($alreadyPresent) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal! Anda sudah memiliki catatan absen masuk hari ini.'
-        ], 422);
+        $attachment = null;
+        if ($request->hasFile('attachment')) {
+            $attachment = $request->file('attachment')->store('leaves', 'public');
+        }
+
+        // SIMPAN KE TABEL LEAVES
+        $leave = Leave::create([
+            'user_id'         => $user->id,
+            'type'            => strtolower($request->category), // sakit, cuti, atau izin
+            'start_date'      => $request->start_date,
+            'end_date'        => $request->end_date ?? $request->start_date,
+            'reason'          => $request->notes, // Flutter kirim 'notes'
+            'attachment_file' => $attachment, 
+            'status'          => 'pending',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Laporan berhasil terkirim ke tabel leaves'], 201);
     }
-
-    // 2. Simpan Lampiran
-    $path = null;
-    if ($request->hasFile('attachment')) {
-        $path = $request->file('attachment')->store('permissions', 'public');
-    }
-
-    // 3. Simpan ke tabel presences (Agar sinkron dengan Dashboard Web)
-    $presence = Presence::create([
-        'user_id'     => $user->id,
-        'category'    => strtolower($request->category), // 'sakit', 'cuti', 'izin'
-        'date'        => $targetDate,
-        'notes'       => $request->notes, // Penting: field 'notes' agar muncul di kolom Alasan di Web
-        'attachment'  => $path,
-        'is_approved' => 'pending'
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Laporan berhasil dikirim'
-    ], 201);
-}
 }
