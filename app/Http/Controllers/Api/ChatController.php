@@ -7,20 +7,21 @@ use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
-    public function index() {
-    // Ambil chat + info pengirim, urutkan dari yang lama ke baru
-    $chats = \App\Models\Chat::with('user:id,name')->orderBy('created_at', 'asc')->get();
-    return response()->json($chats);
+        public function index() {
+        $chats = \App\Models\Chat::with(['user:id,name', 'parent.user:id,name'])
+                ->orderBy('created_at', 'asc')
+                ->get();
+                
+        return response()->json($chats);
 }
 
-public function store(Request $request) {
-    $request->validate(['message' => 'required']);
-
-    $chat = \App\Models\Chat::create([
-        'user_id' => $request->user()->id,
-        'message' => $request->message
-    ]);
-
-    return response()->json($chat->load('user:id,name'), 201);
-}
+        public function store(Request $request) {
+            $chat = \App\Models\Chat::create([
+                'user_id'   => $request->user()->id,
+                'message'   => $request->message,
+                'parent_id' => $request->parent_id, // Tambahkan ini
+            ]);
+            return response()->json($chat->load(['user:id,name', 'parent']), 201);
+    }
+    
 }
