@@ -16,12 +16,22 @@ class ChatController extends Controller
 }
 
         public function store(Request $request) {
-            $chat = \App\Models\Chat::create([
-                'user_id'   => $request->user()->id,
-                'message'   => $request->message,
-                'parent_id' => $request->parent_id, // Tambahkan ini
-            ]);
-            return response()->json($chat->load(['user:id,name', 'parent']), 201);
-    }
+        $request->validate(['type' => 'required']);
+
+        $filePath = null;
+        if ($request->hasFile('file')) {
+                $filePath = $request->file('file')->store('uploads', 'public');
+        }
+
+        $chat = \App\Models\Chat::create([
+                'user_id' => $request->user()->id,
+                'message'   => $request->message ??'', 
+                'file_path' => $filePath,
+                'type' => $request->type,
+                'parent_id' => $request->parent_id
+        ]);
+
+        return response()->json($chat->load(['user:id,name', 'parent.user:id,name']), 201);
+        }
     
 }

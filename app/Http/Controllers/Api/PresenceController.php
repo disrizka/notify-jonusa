@@ -120,4 +120,22 @@ class PresenceController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Laporan berhasil terkirim ke tabel leaves'], 201);
     }
+
+    public function todayStatus(Request $request)
+{
+    $user = $request->user();
+    $today = now()->format('Y-m-d');
+
+    $presence = Presence::where('user_id', $user->id)
+        ->where('date', $today)
+        ->where('category', 'masuk')
+        ->first();
+
+    return response()->json([
+        'has_checkin'  => $presence !== null,
+        'has_checkout' => $presence?->check_out !== null,
+        'check_in'     => $presence?->check_in,
+        'check_out'    => $presence?->check_out,
+    ]);
+}
 }
